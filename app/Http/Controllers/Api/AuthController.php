@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Helpers\ApiFormatter;
+use App\Models\Mahasiswa;
+use App\Models\User;
 // Auth
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -16,49 +19,27 @@ use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function login(Request $r)
     {
-        $credentials = $request->only('email', 'password');
+        $cred = $r->only('nim','password');
 
-        $validator = Validator::make($credentials, [
-            'email' => 'required|email',
-            'password' => 'required|string|min:6',
-        ], [
-            'email.required' => 'Email is required',
-            'email.email' => 'Email must be a valid email address',
-            'password.required' => 'Password is required',
-            'password.min' => 'Password must be at least 6 characters',
-        ]);
-
-        if ($validator->fails()) {
-            return ResponseFormat::badRequest($validator->errors()->first());
-        }
-        if (!Auth::attempt($credentials)) {
-            return ResponseFormat::badRequest("Invalid credentials");
-        }
-        try {
-            if (!$token = JWTAuth::attempt($credentials)) {
-                return ResponseFormat::badRequest("Invalid credentials");
-            }
-        } catch (JWTException $e) {
-            return ResponseFormat::serverError("Could not create token");
+        if(!$token = Auth::attempt($cred)){
+            return ResponseFormat::unauthorized("NIM / Password salah");
         }
 
-        $expiry = Carbon::now()->addMinutes(config('jwt.ttl'));
-
-
-        return ResponseFormat::success(200, "Login successful", ['token' => $token, 'expires_at' => $expiry->toDateTimeString()]);
+        return ResponseFormat::success(
+            200,
+            "Login berhasil",
+            ApiFormatter::filterSensitiveData([
+                'token'=>$token,
+                'user'=>Auth::user()
+            ])
+        );
     }
 
-    public function me(Request $request)
+    public function me()
     {
-        try {
-            $user = Auth::user();
-            // $user = "Heabrain";
-            return ResponseFormat::success(200, "User details fetched successfully", $user);
-        } catch (JWTException $e) {
-            return ResponseFormat::unauthorized("Token is invalid");
-        }
+        return ResponseFormat::success(200,"OK", User::with('mahasiswa')->find(Auth::id()));
     }
 
     public function refresh(Request $request)
@@ -82,24 +63,18 @@ class AuthController extends Controller
         }
     }
 
-    public function register(Request $request)
+    public function register(Request $r)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
+        $user = User::create([
+            'nim'=>$r->nim,
+            'name'=>$r->name,
+            'password'=>Hash::make($r->password),
+            'role'=>'mahasiswa',
+            'status'=>'pending'
         ]);
 
-        if ($validator->fails()) {
-            return ResponseFormat::badRequest($validator->errors()->first());
-        }
+        Mahasiswa::create(['user_id'=>$user->id]);
 
-        $user = \App\Models\User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        return ResponseFormat::success(200, "User registered successfully", $user);
+        return ResponseFormat::success(200,"Registrasi berhasil");
     }
 }
