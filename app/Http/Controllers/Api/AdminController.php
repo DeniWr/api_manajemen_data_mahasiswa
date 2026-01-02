@@ -1,8 +1,11 @@
 <?php
 
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use App\Helpers\ResponseFormat;
 use App\Models\User;
-use App\Http\Controllers\Controller;
 
 class AdminController extends Controller
 {
@@ -26,4 +29,3 @@ class AdminController extends Controller
         return ResponseFormat::success(200,"Mahasiswa diblokir");
     }
 }
-
