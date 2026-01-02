@@ -9,7 +9,6 @@ class ApiFormatter
         $sensitiveFields = [
             'password',
             'password_confirmation',
-            'token',
             'api_key',
             'secret',
         ];
@@ -28,10 +27,15 @@ class ApiFormatter
         string $message,
         mixed $data = null
     ): array {
+        if (is_array($data) && isset($data['user'])) {
+            $data['user'] = self::filterSensitiveData($data['user']);
+        }
+
         return [
             'status' => $statusCode,
             'message' => $message,
             'data' => $data,
         ];
     }
+
 }

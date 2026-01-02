@@ -12,7 +12,7 @@ return new class extends Migration
             $table->string('nim', 20)->unique();
             $table->string('name', 100);
             $table->string('password');
-            $table->tinyInteger('role')->default(2); // 1=admin,2=mahasiswa
+            $table->enum('role', ['admin','mahasiswa'])->default('mahasiswa');
             $table->boolean('is_active')->default(false);
             $table->timestamps();
         });

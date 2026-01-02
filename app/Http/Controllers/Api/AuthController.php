@@ -8,8 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
-use App\Helpers\ApiFormatter;
+
 use App\Models\Mahasiswa;
 use App\Models\User;
 // Auth
@@ -21,25 +20,28 @@ class AuthController extends Controller
 {
     public function login(Request $r)
     {
-        $cred = $r->only('nim','password');
+        $cred = $r->only('nim', 'password');
 
-        if(!$token = Auth::attempt($cred)){
+        if (!Auth::attempt($cred)) {
+            return ResponseFormat::unauthorized("NIM / Password salah Auth");
+        }
+        if (!$token = JWTAuth::attempt($cred)) {
             return ResponseFormat::unauthorized("NIM / Password salah");
         }
 
         return ResponseFormat::success(
             200,
             "Login berhasil",
-            ApiFormatter::filterSensitiveData([
-                'token'=>$token,
-                'user'=>Auth::user()
+            ResponseFormat::success(200, "", [
+                'token' => $token,
+                'user' => Auth::user()
             ])
         );
     }
 
     public function me()
     {
-        return ResponseFormat::success(200,"OK", User::with('mahasiswa')->find(Auth::id()));
+        return ResponseFormat::success(200, "OK", User::with('mahasiswa')->find(Auth::id()));
     }
 
     public function refresh(Request $request)
@@ -66,15 +68,15 @@ class AuthController extends Controller
     public function register(Request $r)
     {
         $user = User::create([
-            'nim'=>$r->nim,
-            'name'=>$r->name,
-            'password'=>Hash::make($r->password),
-            'role'=>'mahasiswa',
-            'status'=>'pending'
+            'nim' => $r->nim,
+            'name' => $r->name,
+            'password' => Hash::make($r->password),
+            'role' => '2',
+            'status' => 'pending'
         ]);
 
-        Mahasiswa::create(['user_id'=>$user->id]);
+        Mahasiswa::create(['user_id' => $user->id]);
 
-        return ResponseFormat::success(200,"Registrasi berhasil");
+        return ResponseFormat::success(200, "Registrasi berhasil");
     }
 }
