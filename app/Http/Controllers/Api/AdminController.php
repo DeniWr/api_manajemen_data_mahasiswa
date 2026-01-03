@@ -18,14 +18,21 @@ class AdminController extends Controller
     public function activate($id){
         $u = User::find($id);
         if(!$u) return ResponseFormat::notFound();
-        $u->update(['status'=>'active']);
-        return ResponseFormat::success(200,"Mahasiswa diaktifkan");
+
+        $u->is_active = true;
+        $u->save();
+
+        return ResponseFormat::success(200,"Mahasiswa diaktifkan", $u);
     }
 
-    public function block($id){
+    public function deactivate($id){
         $u = User::find($id);
         if(!$u) return ResponseFormat::notFound();
-        $u->update(['status'=>'blocked']);
-        return ResponseFormat::success(200,"Mahasiswa diblokir");
+
+        $u->is_active = false;
+        $u->save();
+
+        return ResponseFormat::success(200,"Mahasiswa diblokir", $u);
     }
+
 }

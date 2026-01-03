@@ -3,31 +3,33 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Helpers\ResponseFormat;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Helpers\ResponseFormat;
 
 class ProfileController extends Controller
 {
     public function show()
     {
-        return ResponseFormat::success(
-            200,
-            "OK",
-            Auth::user()->mahasiswa
-        );
+        $user = JWTAuth::parseToken()->authenticate();
+
+        return ResponseFormat::success(200, "OK", $user->mahasiswa);
     }
 
     public function update(Request $request)
     {
-        $user = Auth::user();
+        $user = JWTAuth::parseToken()->authenticate();
 
-        if(!$user->mahasiswa){
+        if (!$user->mahasiswa) {
             return ResponseFormat::notFound();
         }
 
-        $user->mahasiswa->update($request->all());
+        $user->mahasiswa->update(
+            $request->only(['jurusan', 'angkatan', 'alamat'])
+        );
 
-        return ResponseFormat::success(200, "Profil berhasil diupdate");
+        $user->mahasiswa->save();
+
+        return ResponseFormat::success(200, "Profil berhasil diupdate", $user->mahasiswa);
     }
 }
